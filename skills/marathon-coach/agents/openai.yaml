@@ -1,0 +1,4 @@
+interface:
+  display_name: "Marathon Coach"
+  short_description: "Analyze running logs and training cycles"
+  default_prompt: "Use $marathon-coach to analyze my latest marathon training upload with recent weekly, monthly, quarterly, and yearly context."

@@ -1,0 +1,11 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+
+data/uploads/
+data/reports/
+data/training_log.csv
+
+.venv/
+venv/
+env/

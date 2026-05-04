@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Marathon Coach" xmlns="http://www.topografix.com/GPX/1/1">
+  <trk>
+    <name>Sample Morning Run</name>
+    <trkseg>
+      <trkpt lat="31.23040" lon="121.47370"><ele>8</ele><time>2026-05-01T22:00:00Z</time></trkpt>
+      <trkpt lat="31.23120" lon="121.47910"><ele>9</ele><time>2026-05-01T22:05:00Z</time></trkpt>
+      <trkpt lat="31.23210" lon="121.48460"><ele>10</ele><time>2026-05-01T22:10:00Z</time></trkpt>
+      <trkpt lat="31.23310" lon="121.49010"><ele>12</ele><time>2026-05-01T22:15:00Z</time></trkpt>
+      <trkpt lat="31.23400" lon="121.49560"><ele>13</ele><time>2026-05-01T22:20:00Z</time></trkpt>
+    </trkseg>
+  </trk>
+</gpx>
