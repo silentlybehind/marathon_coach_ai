@@ -38,6 +38,9 @@ TEXT = {
         "notes": "备注",
         "notes_placeholder": "身体状态、天气、补给、疼痛、心率异常等",
         "upload_gpx": "上传 GPX",
+        "uploading": "上传中...",
+        "upload_processing": "上传完成，正在解析训练数据...",
+        "upload_complete": "上传完成",
         "view_report": "查看报告",
         "recent_activities": "最近活动",
         "recent_desc": "最近上传会像活动流一样出现在这里。",
@@ -74,6 +77,9 @@ TEXT = {
         "notes": "Notes",
         "notes_placeholder": "Body state, weather, fueling, pain, abnormal heart rate, etc.",
         "upload_gpx": "Upload GPX",
+        "uploading": "Uploading...",
+        "upload_processing": "Upload complete. Processing training data...",
+        "upload_complete": "Upload complete",
         "view_report": "View Report",
         "recent_activities": "Recent Activities",
         "recent_desc": "Recent uploads appear here as an activity feed.",
@@ -234,6 +240,23 @@ def page_shell(title: str, body: str, lang: str = "zh") -> bytes:
     textarea {{ min-height: 88px; resize: vertical; }}
     .full {{ grid-column: 1 / -1; }}
     .actions {{ display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 16px; }}
+    .progress-area {{ display: none; margin-top: 14px; }}
+    .progress-area.active {{ display: block; }}
+    .progress-track {{
+      height: 10px;
+      overflow: hidden;
+      border: 1px solid #cad5cf;
+      border-radius: 999px;
+      background: #eef2ef;
+    }}
+    .progress-bar {{
+      width: 0%;
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--orange), var(--green));
+      transition: width .18s ease;
+    }}
+    .progress-text {{ margin-top: 8px; color: var(--muted); font-size: 13px; font-weight: 700; }}
     .feed {{ padding: 0; overflow: hidden; }}
     .feed-head {{ padding: 16px 18px; border-bottom: 1px solid var(--line); }}
     .activity {{ padding: 16px 18px; border-bottom: 1px solid var(--line); }}
@@ -289,6 +312,67 @@ def page_shell(title: str, body: str, lang: str = "zh") -> bytes:
     </div>
   </header>
   <main>{body}</main>
+  <script>
+    const uploadForm = document.querySelector("[data-upload-form]");
+    if (uploadForm) {{
+      const progressArea = uploadForm.querySelector("[data-progress-area]");
+      const progressBar = uploadForm.querySelector("[data-progress-bar]");
+      const progressText = uploadForm.querySelector("[data-progress-text]");
+      const submitButton = uploadForm.querySelector("[data-submit-button]");
+      const fileInput = uploadForm.querySelector("input[type=file]");
+      const originalButtonText = submitButton ? submitButton.textContent : "";
+
+      uploadForm.addEventListener("submit", (event) => {{
+        if (!window.XMLHttpRequest || !fileInput || !fileInput.files.length) {{
+          return;
+        }}
+        event.preventDefault();
+
+        const formData = new FormData(uploadForm);
+        const request = new XMLHttpRequest();
+        progressArea.classList.add("active");
+        progressBar.style.width = "0%";
+        progressText.textContent = uploadForm.dataset.uploadingText || "Uploading...";
+        if (submitButton) {{
+          submitButton.disabled = true;
+          submitButton.textContent = uploadForm.dataset.uploadingText || originalButtonText;
+        }}
+
+        request.upload.addEventListener("progress", (progressEvent) => {{
+          if (!progressEvent.lengthComputable) {{
+            progressBar.style.width = "35%";
+            return;
+          }}
+          const percent = Math.max(1, Math.min(99, Math.round((progressEvent.loaded / progressEvent.total) * 100)));
+          progressBar.style.width = percent + "%";
+          progressText.textContent = (uploadForm.dataset.uploadingText || "Uploading...") + " " + percent + "%";
+        }});
+
+        request.addEventListener("load", () => {{
+          progressBar.style.width = "100%";
+          progressText.textContent = uploadForm.dataset.processingText || "Processing...";
+          if (submitButton) {{
+            submitButton.textContent = uploadForm.dataset.completeText || originalButtonText;
+          }}
+          window.location.href = request.responseURL || "/upload";
+        }});
+
+        request.addEventListener("error", () => {{
+          progressArea.classList.remove("active");
+          progressText.textContent = "";
+          progressBar.style.width = "0%";
+          if (submitButton) {{
+            submitButton.disabled = false;
+            submitButton.textContent = originalButtonText;
+          }}
+          uploadForm.submit();
+        }});
+
+        request.open("POST", uploadForm.action);
+        request.send(formData);
+      }});
+    }}
+  </script>
 </body>
 </html>""".encode("utf-8")
 
@@ -471,7 +555,7 @@ def upload_page(message: str = "", error: bool = False, lang: str = "zh") -> byt
       <section class="panel upload">
         <h1>{esc(text["upload_title"])}</h1>
         <p>{esc(text["upload_desc"])}</p>
-        <form action="/upload?lang={lang}" method="post" enctype="multipart/form-data">
+        <form action="/upload?lang={lang}" method="post" enctype="multipart/form-data" data-upload-form data-uploading-text="{esc(text["uploading"])}" data-processing-text="{esc(text["upload_processing"])}" data-complete-text="{esc(text["upload_complete"])}">
           <div class="drop">
             <strong>{esc(text["drop_title"])}</strong>
             <p>{esc(text["drop_desc"])}</p>
@@ -496,8 +580,14 @@ def upload_page(message: str = "", error: bool = False, lang: str = "zh") -> byt
               <textarea name="notes" placeholder="{esc(text["notes_placeholder"])}"></textarea>
             </label>
           </div>
+          <div class="progress-area" data-progress-area aria-live="polite">
+            <div class="progress-track">
+              <div class="progress-bar" data-progress-bar></div>
+            </div>
+            <div class="progress-text" data-progress-text></div>
+          </div>
           <div class="actions">
-            <button class="button" type="submit">{esc(text["upload_gpx"])}</button>
+            <button class="button" type="submit" data-submit-button>{esc(text["upload_gpx"])}</button>
             <a class="button secondary" href="/report?lang={lang}" target="_blank">{esc(text["view_report"])}</a>
           </div>
         </form>
